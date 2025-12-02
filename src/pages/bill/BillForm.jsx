@@ -138,7 +138,7 @@ const BillForm = () => {
                     {/* Categoria */}
                     <div className='mb-3'>
                         <label htmlFor="id-categoria" className='form-label'>Categoria</label>
-                        <select id="id-categoria" className='form-control' {...register('id_categoria')} >
+                        <select id="id-categoria" className='form-select' {...register('id_categoria')} >
                             <option value="0">Escolha uma categoria</option>
                             <option value="1">Teste</option>
                         </select>
@@ -154,7 +154,7 @@ const BillForm = () => {
                     {/* Forma de pagamento */}
                     <div className='mb-3'>
                         <label htmlFor="forma-pagamento" className='form-label'>Forma de pagamento</label>
-                        <select id="forma-pagamento" className='form-control' {...register('forma_pagamento')}>
+                        <select id="forma-pagamento" className='form-select' {...register('forma_pagamento')}>
                             <option value="P">Pix</option>
                             <option value="B">Boleto</option>
                             <option value="D">Dinheiro</option>
@@ -180,7 +180,7 @@ const BillForm = () => {
                     {/* Recorrência */}
                     <div className='mb-3'>
                         <label htmlFor="recorrencia" className='form-label'>Recorrência</label>
-                        <select id='recorrencia' className='form-control' {...register('recorrencia')} >
+                        <select id='recorrencia' className='form-select' {...register('recorrencia')} >
                             <option value="U">Única</option>
                             <option value="M">Mensal</option>
                             <option value="A">Anual</option>
@@ -189,7 +189,7 @@ const BillForm = () => {
                     {/* Status */}
                     <div className='mb-3'>
                         <label htmlFor="status" className='form-label'>Status</label>
-                        <select id='status' className='form-control' {...register('status')} >
+                        <select id='status' className='form-select' {...register('status')} >
                             <option value="A">Aberto</option>
                             <option value="P">Pago</option>
                             <option value="C">Cancelado</option>
