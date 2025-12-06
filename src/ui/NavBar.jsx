@@ -29,7 +29,7 @@ const NavBar = () => {
             text: 'Contas'
         },
         {
-            to: '/categories',
+            to: '/category/form',
             text: 'Categorias'
         },
     ];

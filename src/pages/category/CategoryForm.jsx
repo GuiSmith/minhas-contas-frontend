@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 // UI
 import { ToastContainer, toast } from 'react-toastify';
-import { NavLink, useLocation, useParams } from 'react-router-dom';
+import { NavLink, useLocation, useParams, useNavigate } from 'react-router-dom';
 
 // Personalized UI
 import Loading from '@components/Loading';
@@ -17,15 +17,20 @@ import '@styles/form.css';
 
 const CategoryForm = () => {
 
-    const { register, handleSubmit, watch } = useForm();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isWaitingResponse, setIsWaitingResponse] = useState(false);
+    const { register, handleSubmit, watch, reset } = useForm();
+    const defaultValues = {
+        id: null,
+        descricao: '',
+        id_categoria: null
+    };
 
+    const [isLoading, setIsLoading] = useState(false);
     const [category, setCategory] = useState({});
     const [categories, setCategories] = useState([]);
 
     const location = useLocation();
     const params = useParams();
+    const navigate = useNavigate();
 
     // Buscar categoria
     useEffect(() => {
@@ -47,6 +52,7 @@ const CategoryForm = () => {
                     toast.warning(resData.message);
                 } else {
                     setCategory(resData);
+                    reset({ descricao: resData.descricao, id_categoria: resData.id_categoria });
                 }
             } catch (error) {
                 toast.error('Erro ao buscar categoria');
@@ -81,48 +87,148 @@ const CategoryForm = () => {
             }
         };
         getCategories();
-    }, [])
+    }, []);
+
+    // Validações
+    const validations = async (data) => {
+        try {
+            setIsLoading(true);
+
+            // Descrição não pode ser vazia
+            if (!data.descricao || data.descricao.length == 0) {
+                toast.warning('Preencha uma descrição!');
+                return false;
+            }
+
+            if (data.hasOwnProperty('id_categoria')) {
+                data.id_categoria = data.id_categoria === '' ? null : data.id_categoria;
+            }
+
+            return true;
+        } catch (error) {
+            toast.error('Erro ao realizar validações. Contate o suporte!');
+
+            console.log('Erro ao realizar validações');
+            console.error(error);
+
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Botão Novo
+    const handleNew = async () => {
+        navigate('/category/form');
+        reset({ ...defaultValues });
+    }
+
+    // Criar
+    const create = async (data) => {
+
+        const permittedColumns = ['descricao', 'id_categoria'];
+
+        const payload = {};
+
+        for (const column in data) {
+            if (permittedColumns.includes(column)) {
+                payload[column] = data[column];
+            }
+        }
+
+        const endpoint = 'category';
+        const completeUrl = `${apiUrl}${endpoint}`;
+
+        const res = await fetch(completeUrl, apiOptions('POST', payload));
+        const resData = await res.json();
+
+        if (res.ok) {
+            toast.success('Categoria criada!');
+            reset({ descricao: resData.descricao, id_categoria: resData.id_categoria });
+        } else {
+            toast.warning(resData.message);
+        }
+
+        return res.ok;
+    };
+
+    // Atualizar
+    const update = async (data) => {
+
+        const permittedColumns = ['descricao', 'id_categoria'];
+
+        const payload = {};
+
+        for (const column in data) {
+            if (permittedColumns.includes(column)) {
+                payload[column] = data[column];
+            }
+        }
+
+        const endpoint = `category/${category.id}`;
+        const completeUrl = `${apiUrl}${endpoint}`;
+
+        const res = await fetch(completeUrl, apiOptions('PUT', payload));
+        const resData = await res.json();
+
+        if (res.ok) {
+            toast.success('Atualização realizada!');
+        } else {
+            toast.warning(resData.message);
+        }
+    };
 
     const onSubmit = async (data) => {
-        console.log(data);
+        if (isLoading) {
+            return;
+        }
 
         try {
             // Validações
-            if (data.descricao.length == 0) {
-                toast.warning('Preencha uma descrição!');
+            const validationsComplete = await validations(data);
+
+            if (!validationsComplete) {
                 return;
             }
 
-            // Empty father category
-            if (data.id_categoria === 0){
-                data.id_categoria = null;
+            if (Object.keys(category).length > 0) {
+                update(data);
+            } else {
+                create(data);
             }
 
         } catch (error) {
             toast.error('Erro desconhecido. Contate o suporte!');
-            console.debug(error);
+            console.log('Erro ao enviar formulário');
+            console.error(error);
         }
-    }
+    };
 
-    const handleDelete = async () => {
-        toast.warning('Ainda não implementado!');
-    }
+    const tableColumns = {
+        id: {
+            display: 'ID',
+        },
+        descricao: {
+            display: 'Descrição'
+        },
+        descricao_visual: {
+            display: 'Hierarquia'
+        }
+    };
 
     return (
         <article>
             {/* Título */}
             <div className='text-center'>
-                <h1 className='fw-bold'>Categoria</h1>
-                <p>Cadastre sua categoria de conta a pagar</p>
+                <h1 className='fw-bold'>Categorias</h1>
+                <p>Gerencie suas categorias de contas a pagar</p>
             </div>
             {/* Formulário */}
-            <form action="#" className='card shadow-sm p-3' onSubmit={handleSubmit(onSubmit)}>
+            <form action="#" className='card shadow-sm p-3 mb-3' onSubmit={handleSubmit(onSubmit)}>
                 {/* Botões */}
                 <div className='mb-3 d-flex flex-wrap justify-content-start gap-3'>
-                    <NavLink to='/category/form' className={'btn btn-primary'} >Novo</NavLink>
-                    <button type='submit' disabled={isWaitingResponse || isLoading} className='btn btn-success'>Salvar</button>
-                    <NavLink to='/category/list' className={'btn btn-dark'} >Listar</NavLink>
-                    <button type='button' disabled={isWaitingResponse || isLoading} className='btn btn-danger' onClick={handleDelete}>Deletar</button>
+                    <button type='button' disabled={isLoading} onClick={handleNew} className={'btn btn-primary'} >Novo</button>
+                    <button type='submit' disabled={isLoading} className='btn btn-success'>Salvar</button>
                 </div>
                 {/* Descrição */}
                 <div className='mb-3'>
@@ -132,12 +238,42 @@ const CategoryForm = () => {
                 {/* Categoria pai */}
                 <div className='mb-3'>
                     <label htmlFor='id-categoria' className='form-label'>Categoria Pai</label>
-                    <select id='id-categoria' className='form-select' defaultValue="0" {...register('id_categoria')} >
-                        <option value="0">Seleciona uma categoria</option>
-                        {categories.map((category, index) => <option key={`category-${index}`} value={category.id} >{category.descricao}</option>)}
+                    <select id='id-categoria' className='form-select' defaultValue="" {...register('id_categoria')} >
+                        <option value="">Selecione uma categoria</option>
+                        {categories.map((category, index) => <option key={`category-${index}`} value={category.id} >{category.descricao_visual}</option>)}
                     </select>
                 </div>
             </form>
+            {/* Tabela */}
+            <div className='table-container container'>
+                <table className='table table-stripped'>
+                    <thead>
+                        <tr>
+                            {Object.keys(tableColumns).map((col) => (
+                                <th className='text-center' key={col}>{tableColumns[col].display}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {categories.length === 0 ? (
+                            <tr>
+                                <td colSpan={Object.keys(tableColumns).length} className='text-center'>Nenhuma categoria encontrada</td>
+                            </tr>
+                        ) : (
+                            categories.map((row) => (
+                                <tr key={row.id} onClick={() => navigate(`/category/form/${row.id}`)} style={{cursor: 'pointer'}}>
+                                    {Object.keys(tableColumns).map((col) => {
+                                        const colDef = tableColumns[col] || {};
+                                        const value = row[col];
+                                        const content = typeof colDef.format === 'function' ? colDef.format(value) : (value ?? '');
+                                        return <td key={col}>{content}</td>;
+                                    })}
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
             <ToastContainer position='bottom-right' />
         </article>
     )
